@@ -1,28 +1,52 @@
 import http from 'node:http';
 
-const server = http.createServer((req, res) => {
-  // req (request) - об'єкт із даними про запит від клієнта
-  // res (response) - об'єкт для формування відповіді сервера
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-  console.log(`Отримано запит: ${req.method} ${req.url}`);
+const PORT = 3000;
 
-  // Встановлюємо заголовки відповіді (JSON формат та статус 200 OK)
-  res.writeHead(200, { 'Content-Type': 'application/json' });
+const server = http.createServer(async (req, res) => {
+  const dataPath = path.join(process.cwd(), 'data.json');
 
-  // Формуємо дані для відповіді
-  const responseData = {
-    message: 'Привіт! Ваш Node.js сервер працює!',
-    time: new Date().toLocaleTimeString(),
-    method: req.method,
-    url: req.url,
-  };
+  if (req.url === '/data' && req.method === 'GET') {
+    try {
+      const content = await fs.readFile(dataPath, 'utf-8');
 
-  // Відправляємо відповідь клієнту (перетворюємо об'єкт у рядок)
-  res.end(JSON.stringify(responseData));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(content);
+    } catch (error) {
+      console.error(error);
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Помилка при читанні файлу');
+    }
+  } else {
+    // Відповідь для всіх інших маршрутів
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Маршрут не знайдено. Спробуйте /data');
+  }
 });
 
 // Запускаємо сервер на порту 3000
-const PORT = 3000;
+
 server.listen(PORT, () => {
   console.log(`Сервер запущено! Адреса: http://localhost:${PORT}`);
 });
+
+// http://localhost:3000/data
+// 200
+// json:
+// {
+//     "project": "Node.js Learning",
+//     "status": "In Progress",
+//     "topics": [
+//         "fs",
+//         "path",
+//         "http",
+//         "git"
+//     ],
+//     "mentor": "X"
+// }
+
+// http://localhost:3000
+// 404
+// Маршрут не знайдено. Спробуйте /data
